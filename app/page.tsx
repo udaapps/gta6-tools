@@ -14,41 +14,45 @@ import {
   Disc,
   HelpCircle,
   Zap,
+  Laptop,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { GPUS_DATA } from "@/data/gpus";
 
-// Updated Hardware Database with RTX 50-Series & Ryzen 9800X3D
+// Updated Hardware Database with RTX 50-Series, Laptop GPUs & Ryzen 9800X3D
 const GPUS = [
   { name: "Select your GPU...", score: 0 },
-  { name: "NVIDIA GTX 1650 / 1060 / RX 580 (4GB-6GB)", score: 25 },
-  { name: "NVIDIA RTX 2060 / RTX 3050 / RX 6600 (8GB)", score: 52 },
-  { name: "NVIDIA RTX 3060 (12GB) / RTX 4060 / RX 7600 XT", score: 74 },
+  { name: "Steam Deck OLED / ROG Ally X / Legion Go (Handheld APU)", score: 22 },
+  { name: "NVIDIA GTX 1650 / 1060 / RTX 3050 Laptop (4GB-6GB)", score: 28 },
+  { name: "NVIDIA RTX 2060 / RTX 4050 Laptop / RX 6600 (6GB-8GB)", score: 52 },
+  { name: "NVIDIA RTX 3060 (12GB) / RTX 4060 (Desktop/Laptop) / RX 7600 XT", score: 74 },
   { name: "NVIDIA RTX 3070 / RTX 4060 Ti (16GB) / RX 7700 XT", score: 84 },
-  { name: "NVIDIA RTX 4070 Super / RTX 5070 / RX 7800 XT", score: 94 },
+  { name: "NVIDIA RTX 4070 Super / RTX 5070 / RX 7800 XT (12GB-16GB)", score: 94 },
   { name: "NVIDIA RTX 4080 Super / RTX 5080 / RX 7900 XTX", score: 98 },
-  { name: "NVIDIA RTX 4090 / RTX 5090 (24GB-32GB)", score: 100 },
+  { name: "NVIDIA RTX 4090 / RTX 5090 (24GB-32GB Flagship)", score: 100 },
 ];
 
 const CPUS = [
   { name: "Select your CPU...", score: 0 },
-  { name: "Intel Core i3 / Old Quad-Core / Ryzen 3", score: 25 },
-  { name: "Intel Core i5 (10th/11th) / Ryzen 5 3600 (6-Core)", score: 58 },
+  { name: "Intel Core i3 / Old Quad-Core / Handheld Zen 2-4 APU", score: 25 },
+  { name: "Intel Core i5 (10th/11th) / Ryzen 5 3600 / 5500 (6-Core)", score: 58 },
   { name: "Intel Core i5 (12th/13th) / Ryzen 5 5600X / 7600X", score: 80 },
-  { name: "Intel Core i7 (13th/14th) / Ryzen 7 7700X / 5800X3D", score: 94 },
+  { name: "Intel Core i7 (13th/14th) / Ryzen 7 7700X / 5800X3D (8-Core)", score: 94 },
   { name: "AMD Ryzen 7 7800X3D / 9800X3D / Intel Core i9-14900K", score: 100 },
 ];
 
 const RAMS = [
-  { name: "8 GB RAM (Critical Bottleneck)", score: 25 },
-  { name: "16 GB DDR4 / DDR5 RAM (Minimum)", score: 75 },
-  { name: "32 GB or 64 GB DDR5 RAM (Recommended)", score: 100 },
+  { name: "8 GB RAM (Critical Stutter Bottleneck)", score: 25 },
+  { name: "16 GB DDR4 / DDR5 RAM (Minimum Floor)", score: 75 },
+  { name: "32 GB or 64 GB DDR5 RAM (Recommended Sweet Spot)", score: 100 },
 ];
 
 const STORAGES = [
-  { name: "NVMe M.2 SSD (Gen 4 / Gen 5) - 212GB+ Free", type: "NVME", penalty: 1 },
+  { name: "NVMe M.2 SSD (Gen 4 / Gen 5 DirectStorage) - 212GB+ Free", type: "NVME", penalty: 1 },
   { name: "SATA SSD (Standard 2.5\" SSD)", type: "SATA", penalty: 0.92 },
-  { name: "Mechanical Hard Drive (HDD) - Not Supported", type: "HDD", penalty: 0.55 },
+  { name: "Mechanical Hard Drive (HDD) - Unsupported", type: "HDD", penalty: 0.55 },
 ];
 
 export default function GTA6ToolsHub() {
@@ -62,9 +66,11 @@ export default function GTA6ToolsHub() {
   const [ram, setRam] = useState(75);
   const [storage, setStorage] = useState("NVME");
   const [resolution, setResolution] = useState("1080p");
+  const [upscaling, setUpscaling] = useState(true); // DLSS 4 / FSR 3.5 Toggle
   const [result, setResult] = useState<null | {
     status: "PASS" | "MINIMUM" | "FAIL";
     fps: number;
+    nativeFps: number;
     message: string;
     bottleneck: string;
   }>(null);
@@ -98,36 +104,42 @@ export default function GTA6ToolsHub() {
     const resMultiplier = resolution === "1080p" ? 1 : resolution === "1440p" ? 0.78 : 0.52;
     const storageObj = STORAGES.find((s) => s.type === storage) || STORAGES[0];
     const rawScore = (gpu * 0.55 + cpu * 0.3 + ram * 0.15) * resMultiplier * storageObj.penalty;
-    const estimatedFps = Math.round((rawScore / 100) * 95);
+
+    const nativeFps = Math.max(12, Math.round((rawScore / 100) * 82));
+    const upscaledFps = Math.round(nativeFps * 1.35); // +35% with DLSS 4 / FSR 3.5 Frame Gen
+    const finalFps = upscaling ? upscaledFps : nativeFps;
 
     let bottleneck = "None (Balanced Build)";
-    if (storage === "HDD") bottleneck = "HDD Storage (212GB NVMe SSD Required for RAGE 9 Asset Streaming!)";
-    else if (gpu < 74) bottleneck = "GPU VRAM & Core Speed (12GB+ VRAM Recommended)";
-    else if (cpu < 75) bottleneck = "CPU Crowd & AI Simulation Bottleneck";
+    if (storage === "HDD") bottleneck = "HDD Storage (212GB NVMe SSD Required for RAGE 9 DirectStorage!)";
+    else if (gpu < 74) bottleneck = "GPU VRAM & Ray-Tracing Cores (12GB+ VRAM Recommended)";
+    else if (cpu < 75) bottleneck = "CPU Thread Bottleneck (8-Core/16-Thread Recommended for Vice City Crowds)";
     else if (ram < 75) bottleneck = "System RAM (16GB Minimum / 32GB DDR5 Ideal)";
 
-    if (rawScore >= 72 && storage !== "HDD") {
+    if (rawScore >= 70 && storage !== "HDD") {
       setResult({
         status: "PASS",
-        fps: estimatedFps,
+        fps: finalFps,
+        nativeFps,
         message: "Your PC is Vice City Ready! Beats PS5 Pro's 30 FPS cap with smooth High/Ultra gameplay.",
         bottleneck,
       });
-    } else if (rawScore >= 46 && storage !== "HDD") {
+    } else if (rawScore >= 45 && storage !== "HDD") {
       setResult({
         status: "MINIMUM",
-        fps: estimatedFps,
-        message: "Meets Console-Grade Minimums (30-45 FPS). Use DLSS/FSR Balanced Mode.",
+        fps: finalFps,
+        nativeFps,
+        message: "Meets Console-Grade Minimums. Enable DLSS/FSR Balanced Mode & Medium Textures.",
         bottleneck,
       });
     } else {
       setResult({
         status: "FAIL",
-        fps: Math.max(14, estimatedFps),
+        fps: finalFps,
+        nativeFps,
         message:
           storage === "HDD"
             ? "CRITICAL: GTA VI cannot stream Leonida assets from a Hard Drive (HDD). Upgrade to NVMe SSD!"
-            : "Your system will struggle heavily with GTA VI's RAGE 9 Ray-Traced Engine.",
+            : "Your hardware will struggle heavily with GTA VI's RAGE 9 Ray-Traced Engine.",
         bottleneck,
       });
     }
@@ -143,23 +155,31 @@ export default function GTA6ToolsHub() {
         name: "Does GTA 6 run at 60 FPS on PS5 Pro and Xbox Series X?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "No. Rockstar Games has confirmed GTA 6 targets 30 FPS across PS5, PS5 Pro, and Xbox Series X|S at launch due to heavy CPU simulation and global illumination ray tracing. PS5 Pro gains exclusive PSSR upscaling and ray-traced shadows, while 60+ FPS requires a gaming PC.",
+          text: "No. Rockstar Games targets 30 FPS across PS5, PS5 Pro, and Xbox Series X|S at launch due to heavy CPU simulation and global illumination ray tracing. PS5 Pro gains exclusive PSSR upscaling and ray-traced shadows, while 60+ FPS requires a gaming PC.",
         },
       },
       {
         "@type": "Question",
-        name: "How many GB is GTA 6 download and install size?",
+        name: "Can a Gaming Laptop or Steam Deck run GTA 6?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "GTA 6 requires up to 212 GB of free storage space on an NVMe SSD. Mechanical hard drives (HDD) are not supported due to fast DirectStorage asset streaming in Leonida.",
+          text: "Gaming laptops with an RTX 4060 (8GB), RTX 4070, or RTX 3070 Ti laptop GPU can run GTA 6 at 1080p 50-60 FPS using DLSS. Handhelds like the Steam Deck and ROG Ally X will struggle due to 16GB shared memory and heavy RAGE 9 ray-traced lighting.",
         },
       },
       {
         "@type": "Question",
-        name: "Can an NVIDIA RTX 3060 or RTX 4060 run GTA 6?",
+        name: "Why is the RTX 3060 12GB better than RTX 4060 8GB for GTA 6 Textures?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, both the RTX 3060 (12GB) and RTX 4060 can run GTA 6 at 1080p Medium-High settings at 50-60 FPS using DLSS Quality mode, outperforming base console frame rates.",
+          text: "While the RTX 4060 has a faster core and DLSS 3 Frame Generation, its 8GB VRAM buffer limits high-resolution textures at 1440p. The RTX 3060 12GB offers extra VRAM headroom to prevent texture pop-in across Vice City.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "When is the GTA 6 PC release date after the November 19, 2026 console launch?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Following the November 19, 2026 PS5 and Xbox Series X|S launch, industry reports (GamesBeat) suggest the GTA 6 PC port is targeted for early to mid-2027.",
         },
       },
     ],
@@ -176,13 +196,13 @@ export default function GTA6ToolsHub() {
       <header className="relative overflow-hidden border-b border-pink-500/30 bg-gradient-to-b from-purple-950/60 via-slate-950 to-slate-950 py-14 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-pink-500/20 text-pink-400 border border-pink-500/40 mb-4">
-            <Flame className="w-3.5 h-3.5" /> Official Launch: November 19, 2026 • 212 GB Install Size Confirmed
+            <Flame className="w-3.5 h-3.5" /> Official Launch: November 19, 2026 • PC Port Reported for 2027
           </span>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
             CAN YOUR PC RUN GTA VI?
           </h1>
           <p className="mt-4 text-slate-300 max-w-2xl mx-auto text-base md:text-lg">
-            Test your GPU, CPU & SSD against GTA 6&apos;s RAGE 9 Engine requirements, calculate 1080p/1440p/4K FPS, and compare PC 60+ FPS upgrades vs. PS5 Pro&apos;s 30 FPS PSSR mode.
+            Test your Desktop, Gaming Laptop, or Handheld against GTA 6&apos;s RAGE 9 Engine. Calculate 1080p/1440p/4K FPS with DLSS 4 &amp; FSR 3.5, and check VRAM bottlenecks.
           </p>
 
           {/* Countdown Box */}
@@ -193,7 +213,7 @@ export default function GTA6ToolsHub() {
             </div>
             {isLaunched ? (
               <div className="text-lg md:text-xl font-black text-emerald-400 px-3">
-                LIVE ON PS5 & XBOX • PC PORT PREDICTED NEXT
+                LIVE ON PS5 & XBOX • PC PORT TRACKER ACTIVE (2027 WINDOW)
               </div>
             ) : (
               [
@@ -216,14 +236,14 @@ export default function GTA6ToolsHub() {
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-cyan-400">
-            <Monitor className="w-6 h-6 text-pink-500" /> GTA 6 System Requirements & FPS Calculator (2026 Updated)
+            <Monitor className="w-6 h-6 text-pink-500" /> GTA 6 System Requirements &amp; DLSS/FSR FPS Calculator
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* GPU Select */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-                <Monitor className="w-4 h-4 text-pink-400" /> Graphics Card (GPU - RTX 50/40/30 & RX)
+                <Monitor className="w-4 h-4 text-pink-400" /> Graphics Card (Desktop, Laptop or Handheld)
               </label>
               <select
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500"
@@ -240,7 +260,7 @@ export default function GTA6ToolsHub() {
             {/* CPU Select */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-                <Cpu className="w-4 h-4 text-cyan-400" /> Processor (CPU - RAGE 9 AI Simulation)
+                <Cpu className="w-4 h-4 text-cyan-400" /> Processor (CPU - RAGE 9 Traffic &amp; AI Threads)
               </label>
               <select
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
@@ -272,10 +292,10 @@ export default function GTA6ToolsHub() {
               </select>
             </div>
 
-            {/* Storage Drive Select (NEW: 212GB SSD Factor) */}
+            {/* Storage Drive Select */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-                <Disc className="w-4 h-4 text-emerald-400" /> Storage Drive (212 GB Required)
+                <Disc className="w-4 h-4 text-emerald-400" /> Storage Drive (212 GB DirectStorage)
               </label>
               <select
                 value={storage}
@@ -291,9 +311,9 @@ export default function GTA6ToolsHub() {
             </div>
 
             {/* Target Resolution */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Target Resolution</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {["1080p", "1440p", "4K"].map((res) => (
                   <button
                     key={res}
@@ -310,16 +330,41 @@ export default function GTA6ToolsHub() {
                 ))}
               </div>
             </div>
+
+            {/* NEW: DLSS 4 / FSR 3.5 Upscaling & Frame Gen Toggle */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-cyan-400" /> AI Upscaling (DLSS 4 / FSR 3.5 + Frame Gen)
+              </label>
+              <button
+                type="button"
+                onClick={() => setUpscaling(!upscaling)}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-sm border transition flex items-center justify-between ${
+                  upscaling
+                    ? "bg-cyan-950/60 border-cyan-400 text-cyan-300"
+                    : "bg-slate-950 border-slate-800 text-slate-400"
+                }`}
+              >
+                <span>{upscaling ? "ENABLED (+35% FPS Boost)" : "DISABLED (Native Resolution Only)"}</span>
+                <span
+                  className={`px-2 py-0.5 text-xs rounded ${
+                    upscaling ? "bg-cyan-500 text-slate-950 font-black" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {upscaling ? "ON" : "OFF"}
+                </span>
+              </button>
+            </div>
           </div>
 
           <button
             onClick={calculateSpecs}
             className="mt-8 w-full py-4 rounded-xl font-extrabold text-lg bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-600 hover:opacity-95 transition shadow-[0_0_25px_rgba(236,72,153,0.4)]"
           >
-            CALCULATE MY GTA 6 FPS & COMPATIBILITY
+            CALCULATE MY GTA 6 FPS &amp; BOTTLENECK
           </button>
 
-          {/* Results & High-Converting 3-Way Affiliate Box */}
+          {/* Results & High-Converting 4-Way Affiliate Box */}
           {result && (
             <div className="mt-8 p-6 rounded-2xl bg-slate-950 border border-slate-800 animate-fade-in">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -336,28 +381,30 @@ export default function GTA6ToolsHub() {
                 </div>
                 <div className="bg-slate-900 px-5 py-3 rounded-xl border border-cyan-500/40 text-center shrink-0">
                   <div className="text-3xl font-black text-cyan-400">~{result.fps} FPS</div>
-                  <div className="text-xs text-slate-400">Estimated at {resolution}</div>
+                  <div className="text-xs text-slate-400">
+                    {upscaling ? `${resolution} with DLSS/FSR (Native: ~${result.nativeFps} FPS)` : `${resolution} Native`}
+                  </div>
                 </div>
               </div>
 
-              {/* 3 High-Converting Affiliate Upgrades (Console, GPU, 2TB NVMe SSD) */}
+              {/* 4 High-Converting Affiliate Upgrades (SSD, GPU, Gaming Laptop, PS5 Pro) */}
               <div className="mt-5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                   Recommended Hardware Upgrades for GTA VI (212GB Ready):
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <a
                     href={`https://www.amazon.com/s?k=2TB+NVMe+SSD+Gen4+PS5+PC&tag=${AMAZON_TAG}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col justify-between p-4 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-emerald-500/30 transition"
+                    className="flex flex-col justify-between p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-emerald-500/30 transition"
                   >
                     <div>
-                      <div className="font-bold text-white text-sm">2TB Gen4 NVMe M.2 SSD</div>
-                      <div className="text-xs text-emerald-400 mt-0.5">Required for 212GB Install & Fast Loading</div>
+                      <div className="font-bold text-white text-xs">2TB Gen4 NVMe SSD</div>
+                      <div className="text-[11px] text-emerald-400 mt-0.5">212GB DirectStorage Ready</div>
                     </div>
-                    <span className="mt-3 px-3 py-1.5 bg-emerald-600 text-xs font-bold rounded-lg inline-flex items-center justify-center gap-1">
-                      <ShoppingCart className="w-3.5 h-3.5" /> Check SSD Deals
+                    <span className="mt-3 px-2.5 py-1.5 bg-emerald-600 text-[11px] font-bold rounded-lg inline-flex items-center justify-center gap-1">
+                      <ShoppingCart className="w-3 h-3" /> SSD Deals
                     </span>
                   </a>
 
@@ -365,14 +412,29 @@ export default function GTA6ToolsHub() {
                     href={`https://www.amazon.com/s?k=NVIDIA+RTX+4070+Super+GPU&tag=${AMAZON_TAG}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col justify-between p-4 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-cyan-500/30 transition"
+                    className="flex flex-col justify-between p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-cyan-500/30 transition"
                   >
                     <div>
-                      <div className="font-bold text-white text-sm">RTX 4070 Super / RTX 5070</div>
-                      <div className="text-xs text-cyan-400 mt-0.5">Unlock 60+ FPS at 1440p Ultra</div>
+                      <div className="font-bold text-white text-xs">RTX 4070 Super / 5070</div>
+                      <div className="text-[11px] text-cyan-400 mt-0.5">1440p 60+ FPS Sweet Spot</div>
                     </div>
-                    <span className="mt-3 px-3 py-1.5 bg-cyan-600 text-xs font-bold rounded-lg inline-flex items-center justify-center gap-1">
-                      <ShoppingCart className="w-3.5 h-3.5" /> Check GPU Price
+                    <span className="mt-3 px-2.5 py-1.5 bg-cyan-600 text-[11px] font-bold rounded-lg inline-flex items-center justify-center gap-1">
+                      <ShoppingCart className="w-3 h-3" /> GPU Price
+                    </span>
+                  </a>
+
+                  <a
+                    href={`https://www.amazon.com/s?k=RTX+4060+RTX+4070+Gaming+Laptop+16GB+RAM&tag=${AMAZON_TAG}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col justify-between p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-purple-500/30 transition"
+                  >
+                    <div>
+                      <div className="font-bold text-white text-xs">RTX 4060/4070 Laptop</div>
+                      <div className="text-[11px] text-purple-400 mt-0.5">Best Portable GTA 6 Rig</div>
+                    </div>
+                    <span className="mt-3 px-2.5 py-1.5 bg-purple-600 text-[11px] font-bold rounded-lg inline-flex items-center justify-center gap-1">
+                      <ShoppingCart className="w-3 h-3" /> Laptop Deals
                     </span>
                   </a>
 
@@ -380,14 +442,14 @@ export default function GTA6ToolsHub() {
                     href={`https://www.amazon.com/s?k=PlayStation+5+Pro+Console&tag=${AMAZON_TAG}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col justify-between p-4 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-pink-500/30 transition"
+                    className="flex flex-col justify-between p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-pink-500/30 transition"
                   >
                     <div>
-                      <div className="font-bold text-white text-sm">PlayStation 5 Pro Console</div>
-                      <div className="text-xs text-pink-400 mt-0.5">Play Now with PSSR & Ray-Traced Shadows</div>
+                      <div className="font-bold text-white text-xs">PlayStation 5 Pro</div>
+                      <div className="text-[11px] text-pink-400 mt-0.5">Play Day-1 with 4K PSSR</div>
                     </div>
-                    <span className="mt-3 px-3 py-1.5 bg-pink-600 text-xs font-bold rounded-lg inline-flex items-center justify-center gap-1">
-                      <ShoppingCart className="w-3.5 h-3.5" /> Check PS5 Pro
+                    <span className="mt-3 px-2.5 py-1.5 bg-pink-600 text-[11px] font-bold rounded-lg inline-flex items-center justify-center gap-1">
+                      <ShoppingCart className="w-3 h-3" /> Check PS5 Pro
                     </span>
                   </a>
                 </div>
@@ -396,13 +458,101 @@ export default function GTA6ToolsHub() {
           )}
         </div>
 
-        {/* NEW SEO SECTION: PS5 Pro 30 FPS vs PC 60+ FPS Comparison Table */}
+        {/* NEW HIGH-TRAFFIC SEO SECTION 1: VRAM Ladder (6GB vs 8GB vs 12GB vs 16GB) */}
+        <section className="mt-12 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8">
+          <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-cyan-400" /> GTA 6 VRAM Requirements Ladder: Is 8GB VRAM Enough?
+          </h2>
+          <p className="text-sm text-slate-400 mb-6">
+            RAGE 9 uses mandatory ray-traced global illumination and high-density Vice City texture streaming. Here is how much GPU VRAM you need to avoid texture pop-in and stuttering:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-slate-950 border border-rose-500/30">
+              <div className="text-xs font-bold uppercase text-rose-400">6 GB VRAM</div>
+              <div className="text-base font-extrabold text-white mt-1">GTX 1660S / RTX 2060</div>
+              <p className="text-xs text-slate-400 mt-2">
+                <strong>Entry Floor:</strong> Locked to 1080p Low Textures. Ray tracing must be set to minimum to prevent VRAM overflow stutter.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-950 border border-amber-500/30">
+              <div className="text-xs font-bold uppercase text-amber-400">8 GB VRAM</div>
+              <div className="text-base font-extrabold text-white mt-1">RTX 4060 / RX 6600</div>
+              <p className="text-xs text-slate-400 mt-2">
+                <strong>1080p Medium-High:</strong> Most popular Steam tier. Runs 50–60 FPS at 1080p with DLSS Quality, but VRAM limits 1440p Ultra textures.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-950 border border-cyan-500/30">
+              <div className="text-xs font-bold uppercase text-cyan-400">12 GB VRAM (Sweet Spot)</div>
+              <div className="text-base font-extrabold text-white mt-1">RTX 3060 12GB / 4070S</div>
+              <p className="text-xs text-slate-400 mt-2">
+                <strong>1440p High + Ray Tracing:</strong> Ideal buffer for High/Ultra Leonida textures without frame-time spikes.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/30">
+              <div className="text-xs font-bold uppercase text-emerald-400">16 GB+ VRAM</div>
+              <div className="text-base font-extrabold text-white mt-1">RTX 4080S / 5080 / 7900XT</div>
+              <p className="text-xs text-slate-400 mt-2">
+                <strong>4K Ultra Overdrive:</strong> Full ray-traced reflections, maximum crowd density, and zero VRAM bottlenecks.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* NEW HIGH-TRAFFIC SEO SECTION 2: Gaming Laptops & Handhelds Compatibility */}
+        <section className="mt-12 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8">
+          <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+            <Laptop className="w-5 h-5 text-purple-400" /> Can Gaming Laptops, Steam Deck &amp; ROG Ally X Run GTA 6?
+          </h2>
+          <p className="text-sm text-slate-400 mb-6">
+            Mobile GPUs operate at lower wattage (TGP) than desktop cards. Check how portable setups handle Vice City:
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-purple-400">
+                  <th className="py-3 px-4">Laptop / Handheld Device</th>
+                  <th className="py-3 px-4">VRAM / RAM</th>
+                  <th className="py-3 px-4">Predicted Settings &amp; Resolution</th>
+                  <th className="py-3 px-4">Estimated FPS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                <tr>
+                  <td className="py-3 px-4 font-semibold text-white">Steam Deck LCD / OLED</td>
+                  <td className="py-3 px-4">16 GB Shared</td>
+                  <td className="py-3 px-4">720p Low (FSR Ultra Performance)</td>
+                  <td className="py-3 px-4 text-rose-400 font-bold">20–26 FPS (CPU Bound)</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-semibold text-white">ASUS ROG Ally X / Legion Go</td>
+                  <td className="py-3 px-4">24 GB / 16 GB Shared</td>
+                  <td className="py-3 px-4">900p Low-Medium (FSR 3.5 + AFMF)</td>
+                  <td className="py-3 px-4 text-amber-400 font-bold">30–40 FPS</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-semibold text-cyan-400">RTX 4060 Gaming Laptop (105W+)</td>
+                  <td className="py-3 px-4">8 GB GDDR6 + 16GB RAM</td>
+                  <td className="py-3 px-4">1080p Medium-High (DLSS + Frame Gen)</td>
+                  <td className="py-3 px-4 text-emerald-400 font-bold">55–68 FPS</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-semibold text-emerald-400">RTX 4080 / 4090 Gaming Laptop</td>
+                  <td className="py-3 px-4">12–16 GB GDDR6 + 32GB</td>
+                  <td className="py-3 px-4">1440p High / Ultra (DLSS Quality)</td>
+                  <td className="py-3 px-4 text-emerald-400 font-bold">75–95+ FPS</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* PS5 Pro 30 FPS vs PC 60+ FPS Comparison Table */}
         <section className="mt-12 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8">
           <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
             <Zap className="w-5 h-5 text-pink-500" /> GTA 6 Performance Modes: PS5 Pro (30 FPS Target) vs. Gaming PC
           </h2>
           <p className="text-sm text-slate-400 mb-6">
-            Rockstar confirmed a 30 FPS target across all consoles due to RAGE 9 CPU crowd density and ray-traced global illumination, plus a massive 212 GB storage requirement. Here is how each platform compares:
+            Rockstar confirmed a 30 FPS target across all consoles due to RAGE 9 CPU crowd density and ray-traced global illumination, plus a massive 212 GB storage requirement:
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
@@ -410,8 +560,8 @@ export default function GTA6ToolsHub() {
                 <tr className="border-b border-slate-800 text-cyan-400">
                   <th className="py-3 px-4">Platform / Tier</th>
                   <th className="py-3 px-4">Target FPS</th>
-                  <th className="py-3 px-4">Resolution & Upscaling</th>
-                  <th className="py-3 px-4">Install Size & Storage</th>
+                  <th className="py-3 px-4">Resolution &amp; Upscaling</th>
+                  <th className="py-3 px-4">Install Size &amp; Storage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
@@ -470,10 +620,10 @@ export default function GTA6ToolsHub() {
           </div>
         </section>
 
-        {/* NEW SEO FAQ SECTION */}
+        {/* Expanded SEO FAQ SECTION */}
         <section className="mt-12 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8">
           <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-cyan-400" /> Frequently Asked Questions (GTA 6 Specs & Performance)
+            <HelpCircle className="w-5 h-5 text-cyan-400" /> Frequently Asked Questions (GTA 6 PC Specs &amp; 2027 Release)
           </h2>
           <div className="space-y-4 text-sm">
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
@@ -483,15 +633,15 @@ export default function GTA6ToolsHub() {
               </p>
             </div>
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-              <h3 className="font-bold text-white">2. How much storage space does GTA 6 need?</h3>
+              <h3 className="font-bold text-white">2. Why does the RTX 3060 (12GB) beat the RTX 4060 (8GB) in texture settings?</h3>
               <p className="text-slate-400 mt-1">
-                Official pre-loads confirm GTA 6 requires up to <strong>212 GB</strong> of free storage. Because the RAGE 9 engine continuously streams dense Vice City and Leonida assets, an NVMe M.2 SSD is mandatory. Running the game on an older mechanical HDD will cause severe stuttering and missing textures.
+                While the RTX 4060 has faster clock speeds and DLSS Frame Generation, its 8GB VRAM buffer can fill up at 1440p or High/Ultra textures. The RTX 3060 12GB has 4GB of extra VRAM headroom, preventing texture swapping in dense Vice City areas.
               </p>
             </div>
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-              <h3 className="font-bold text-white">3. Is 8GB VRAM enough for GTA 6 at 1080p?</h3>
+              <h3 className="font-bold text-white">3. When is GTA 6 coming to PC?</h3>
               <p className="text-slate-400 mt-1">
-                8GB VRAM cards (like the RTX 4060 8GB or RX 6600) will run GTA 6 at 1080p Medium textures with DLSS/FSR enabled. However, 12GB to 16GB of VRAM (such as the RTX 3060 12GB, RX 7600 XT 16GB, or RTX 4070 Super) is strongly recommended for High/Ultra textures and ray tracing.
+                GTA 6 launches on PlayStation 5 and Xbox Series X|S on <strong>November 19, 2026</strong>. Industry reports (including GamesBeat sources) indicate Rockstar is targeting an early-to-mid <strong>2027 PC release window</strong>, faster than GTA V&apos;s 19-month wait.
               </p>
             </div>
           </div>
