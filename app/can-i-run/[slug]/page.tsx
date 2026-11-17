@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GPUS_DATA } from "@/data/gpus";
 import { Cpu, Monitor, HardDrive, ShoppingCart, ArrowLeft, CheckCircle2, Gauge } from "lucide-react";
 
-const AMAZON_TAG = "yourtag-20";
+const AMAZON_TAG = "udara1982-20";
 
 export async function generateStaticParams() {
   return GPUS_DATA.map((gpu) => ({

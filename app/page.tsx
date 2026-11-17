@@ -56,7 +56,7 @@ const STORAGES = [
 ];
 
 export default function GTA6ToolsHub() {
-  const AMAZON_TAG = "yourtag-20";
+  const AMAZON_TAG = "udara1982-20";
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [isLaunched, setIsLaunched] = useState(false);
