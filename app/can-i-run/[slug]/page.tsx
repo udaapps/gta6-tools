@@ -78,7 +78,6 @@ export default async function GpuBenchmarkPage({
     notFound();
   }
 
-  // Computed Native vs Upscaled metrics for rich data tables (prevents thin content penalty)
   const native1080p = Math.max(18, Math.round(gpu.fps1080p * 0.76));
   const native1440p = Math.max(14, Math.round(gpu.fps1440p * 0.74));
   const native4k = Math.max(9, Math.round(gpu.fps4k * 0.7));
@@ -92,7 +91,6 @@ export default async function GpuBenchmarkPage({
     (g) => g.slug !== gpu.slug && g.tier !== gpu.tier
   );
 
-  // Combined JSON-LD Schema: BreadcrumbList + Expanded 5-Question FAQPage
   const jsonLdSchema = [
     {
       "@context": "https://schema.org",
@@ -168,7 +166,6 @@ export default async function GpuBenchmarkPage({
       />
 
       <div className="max-w-4xl mx-auto">
-        {/* SEO Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="flex items-center justify-between flex-wrap gap-2 mb-6">
           <Link
             href="/"
@@ -183,7 +180,6 @@ export default async function GpuBenchmarkPage({
           </div>
         </nav>
 
-        {/* Hero Title Card */}
         <section className="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/50 border border-pink-500/30 rounded-2xl p-6 md:p-8 shadow-2xl">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-pink-500/20 text-pink-400 border border-pink-500/40">
@@ -204,7 +200,6 @@ export default async function GpuBenchmarkPage({
             {gpu.verdict}
           </p>
 
-          {/* Primary FPS Benchmark Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
             <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-5 text-center">
               <div className="text-xs uppercase font-bold text-slate-400">1080p (FHD)</div>
@@ -230,13 +225,12 @@ export default async function GpuBenchmarkPage({
           </div>
         </section>
 
-        {/* Detailed Resolution & Upscaling Matrix Table (High Google Featured Snippet Value) */}
         <section className="mt-8 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 overflow-x-auto">
           <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-cyan-400" /> {gpu.name} GTA 6 Resolution & Upscaling Breakdown
           </h2>
           <p className="text-xs text-slate-400 mb-4">
-            Estimated RAGE 9 frame rates comparing Native rendering, {gpu.upscaler} Quality Mode, and AI Frame Generation across Leonida Vice City biomes:
+            Estimated RAGE 9 frame rates comparing Native rendering, {gpu.upscaler} Quality Mode, and AI Frame Generation:
           </p>
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
@@ -245,191 +239,4 @@ export default async function GpuBenchmarkPage({
                 <th className="py-3 px-3">Native Raster</th>
                 <th className="py-3 px-3">{gpu.upscaler} Quality</th>
                 <th className="py-3 px-3">+ Frame Gen</th>
-                <th className="py-3 px-3">Recommended Preset</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70 text-slate-200">
-              <tr>
-                <td className="py-3 px-3 font-bold text-white">1080p (1920x1080)</td>
-                <td className="py-3 px-3">~{native1080p} FPS</td>
-                <td className="py-3 px-3 font-bold text-emerald-400">~{gpu.fps1080p} FPS</td>
-                <td className="py-3 px-3 text-cyan-300">~{frameGen1080p} FPS</td>
-                <td className="py-3 px-3">{gpu.recommendedPreset}</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-3 font-bold text-white">1440p (2560x1440)</td>
-                <td className="py-3 px-3">~{native1440p} FPS</td>
-                <td className="py-3 px-3 font-bold text-cyan-400">~{gpu.fps1440p} FPS</td>
-                <td className="py-3 px-3 text-cyan-300">~{frameGen1440p} FPS</td>
-                <td className="py-3 px-3">Medium-High + Balanced RT</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-3 font-bold text-white">4K (3840x2160)</td>
-                <td className="py-3 px-3">~{native4k} FPS</td>
-                <td className="py-3 px-3 font-bold text-pink-400">~{gpu.fps4k} FPS</td>
-                <td className="py-3 px-3 text-cyan-300">~{Math.round(gpu.fps4k * 1.35)} FPS</td>
-                <td className="py-3 px-3">Performance Upscaling</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        {/* Deep Hardware Breakdown */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2 mb-4">
-              <Gauge className="w-5 h-5 text-pink-500" /> Technical Specs & RAGE 9 Preset
-            </h2>
-            <ul className="space-y-3 text-sm text-slate-300">
-              <li className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">GPU Architecture:</span>
-                <span className="font-semibold text-white">{gpu.arch}</span>
-              </li>
-              <li className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">Video Memory (VRAM):</span>
-                <span className="font-semibold text-white">{gpu.vram}</span>
-              </li>
-              <li className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">Supported Upscaler:</span>
-                <span className="font-semibold text-pink-400">{gpu.upscaler}</span>
-              </li>
-              <li className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">Required Install Storage:</span>
-                <span className="font-semibold text-amber-400">212 GB PCIe 4.0 NVMe</span>
-              </li>
-              <li className="pt-1">
-                <span className="text-slate-400 block mb-1">Optimal GTA 6 Graphic Preset:</span>
-                <span className="font-bold text-emerald-400">{gpu.recommendedPreset}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h2 className="text-xl font-bold text-pink-400 flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-cyan-400" /> Bottleneck & VRAM Analysis
-            </h2>
-            <div>
-              <h3 className="text-xs font-bold uppercase text-slate-400">VRAM Texture Streaming</h3>
-              <p className="text-sm text-slate-300 mt-1">{gpu.vramAnalysis}</p>
-            </div>
-            <div>
-              <h3 className="text-xs font-bold uppercase text-slate-400">Recommended CPU & Storage Pairing</h3>
-              <p className="text-sm text-slate-300 mt-1">
-                Pair the {gpu.name} with at least an <strong className="text-white">{gpu.pairedCpu}</strong>, 16GB–32GB RAM, and a Gen4 M.2 NVMe SSD to avoid asset pop-in across Vice City.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* High-Converting 3-Column Affiliate Upgrade Box */}
-        <section className="mt-8 bg-gradient-to-r from-pink-950/40 via-slate-900 to-cyan-950/40 border border-pink-500/40 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Recommended GTA 6 Hardware Upgrades for {gpu.name}
-          </h2>
-          <p className="text-xs text-slate-400 mb-4">
-            Eliminate VRAM bottlenecks, meet the 212GB DirectStorage requirement, or play Day-1 on console:
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a
-              href={`https://www.amazon.com/s?k=${gpu.upgradeQuery}&tag=${AMAZON_TAG}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col justify-between p-4 rounded-xl bg-slate-950 hover:bg-slate-900 border border-cyan-500/40 transition gap-3"
-            >
-              <div>
-                <div className="text-[11px] text-cyan-400 font-bold uppercase">Recommended GPU Upgrade</div>
-                <div className="font-bold text-white text-sm mt-1">{gpu.upgradeGpu}</div>
-              </div>
-              <span className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5">
-                <ShoppingCart className="w-3.5 h-3.5" /> Check Amazon Price
-              </span>
-            </a>
-
-            <a
-              href={`https://www.amazon.com/s?k=2TB+PCIe+Gen4+NVMe+M.2+SSD+PS5+PC&tag=${AMAZON_TAG}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col justify-between p-4 rounded-xl bg-slate-950 hover:bg-slate-900 border border-amber-500/40 transition gap-3"
-            >
-              <div>
-                <div className="text-[11px] text-amber-400 font-bold uppercase flex items-center gap-1">
-                  <HardDrive className="w-3 h-3" /> For 212GB RAGE 9 Install
-                </div>
-                <div className="font-bold text-white text-sm mt-1">2TB Gen4 M.2 NVMe SSD</div>
-              </div>
-              <span className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5">
-                <ShoppingCart className="w-3.5 h-3.5" /> View SSD Deals
-              </span>
-            </a>
-
-            <a
-              href={`https://www.amazon.com/s?k=PlayStation+5+Pro+Console&tag=${AMAZON_TAG}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col justify-between p-4 rounded-xl bg-slate-950 hover:bg-slate-900 border border-pink-500/40 transition gap-3"
-            >
-              <div>
-                <div className="text-[11px] text-pink-400 font-bold uppercase">Play Day-1 on Console</div>
-                <div className="font-bold text-white text-sm mt-1">PlayStation 5 Pro Console</div>
-              </div>
-              <span className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5">
-                <ShoppingCart className="w-3.5 h-3.5" /> Check PS5 Pro Price
-              </span>
-            </a>
-          </div>
-        </section>
-
-        {/* Visible On-Page FAQ Section (Matches JSON-LD Schema 100% for Google Compliance) */}
-        <section className="mt-8 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-cyan-400" /> Frequently Asked Questions: {gpu.name} in GTA 6
-          </h2>
-          <div className="space-y-3 text-sm">
-            <div className="border-b border-slate-800/80 pb-3">
-              <h3 className="font-bold text-cyan-300">Can the {gpu.name} run GTA 6 at 60 FPS?</h3>
-              <p className="text-slate-300 mt-1 text-xs leading-relaxed">
-                {gpu.verdict} At 1080p, expect ~{native1080p} FPS natively and ~{gpu.fps1080p} FPS with {gpu.upscaler}.
-              </p>
-            </div>
-            <div className="border-b border-slate-800/80 pb-3">
-              <h3 className="font-bold text-cyan-300">Is {gpu.vram} VRAM enough for GTA VI on {gpu.name}?</h3>
-              <p className="text-slate-300 mt-1 text-xs leading-relaxed">{gpu.vramAnalysis}</p>
-            </div>
-            <div>
-              <h3 className="font-bold text-cyan-300">How does {gpu.name} compare to PS5 Pro (30 FPS) in GTA 6?</h3>
-              <p className="text-slate-300 mt-1 text-xs leading-relaxed">
-                While consoles lock to 30 FPS due to dense NPC and physics simulations, pairing the {gpu.name} with an {gpu.pairedCpu} unlocks ~{gpu.fps1080p} FPS at 1080p and ~{gpu.fps1440p} FPS at 1440p.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Complete 30-GPU Internal Linking Matrix (Eliminates Orphan Pages & Boosts Crawl Depth) */}
-        <section className="mt-10 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-6">
-          {sameTierGpus.length > 0 && (
-            <div>
-              <h2 className="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">
-                <Layers className="w-4 h-4" /> Compare Similar {gpu.tier} Tier GPUs for GTA 6
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {sameTierGpus.map((item) => (
-                  <Link
-                    key={item.slug}
-                    href={`/can-i-run/${item.slug}`}
-                    className="text-xs bg-slate-950 hover:bg-slate-800 border border-cyan-500/30 hover:border-cyan-400 rounded-lg px-3 py-2.5 text-slate-200 hover:text-white transition truncate flex justify-between items-center"
-                  >
-                    <span className="truncate">
-                      {item.name.replace("NVIDIA GeForce ", "").replace("AMD Radeon ", "")}
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-bold ml-1 shrink-0">
-                      {item.fps1080p}fps
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <h2 className="text-base font-bold text-slate-200 mb-3 flex items-center gap-2">
-              <Monitor className="w-4 h
+                <th className="py-3
